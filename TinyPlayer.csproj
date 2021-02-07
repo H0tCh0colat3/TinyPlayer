@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\next.png" />
+    <None Remove="Resources\next.svg" />
+    <None Remove="Resources\pause.png" />
+    <None Remove="Resources\pause.svg" />
+    <None Remove="Resources\play.png" />
+    <None Remove="Resources\play.svg" />
+    <None Remove="Resources\previous.png" />
+    <None Remove="Resources\previous.svg" />
+    <None Remove="Resources\shuffle.png" />
+    <None Remove="Resources\shuffle.svg" />
+    <None Remove="Resources\stop.png" />
+    <None Remove="Resources\stop.svg" />
+    <None Remove="Resources\volume.png" />
+    <None Remove="Resources\volume.svg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.0.0" />
+    <PackageReference Include="System.Windows.Interactivity.WPF" Version="2.0.20525" />
+    <PackageReference Include="WindowsAPICodePack-Shell" Version="1.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="IO\" />
+    <Folder Include="Models\" />
+    <Folder Include="Views\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\next.png" />
+    <Resource Include="Resources\pause.png" />
+    <Resource Include="Resources\play.png" />
+    <Resource Include="Resources\previous.png" />
+    <Resource Include="Resources\shuffle.png" />
+    <Resource Include="Resources\stop.png" />
+    <Resource Include="Resources\volume.png" />
+  </ItemGroup>
+
+</Project>
