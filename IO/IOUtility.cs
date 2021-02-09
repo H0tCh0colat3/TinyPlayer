@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using Microsoft.WindowsAPICodePack.Dialogs;
@@ -60,6 +61,34 @@ namespace TinyPlayer.IO
         public static string OpenFileDialog(string initialDirectory, DependencyObject currentElement = null, string title = "Select a File", params FileDialogFilter[] filters)
         {
             return OpenDialog(initialDirectory, currentElement, title, false, filters);
+        }
+
+        public static string GetName(string path, bool includeExtention = true)
+        {
+            var separatorIndex = path.LastIndexOf(Path.DirectorySeparatorChar);
+
+            var nameOnly = path.Substring(separatorIndex + 1);
+            if (!includeExtention)
+            {
+                if (PathIsFile(path) == true)
+                {
+                    return Path.GetFileNameWithoutExtension(nameOnly);
+                }
+            }
+            return nameOnly;
+        }
+
+        public static bool? PathIsFile(string path)
+        {
+            try
+            {
+                var attributes = File.GetAttributes(path);
+                return !attributes.HasFlag(FileAttributes.Directory);
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

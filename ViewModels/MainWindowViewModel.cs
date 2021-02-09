@@ -12,18 +12,6 @@ namespace TinyPlayer.ViewModels
 {
     public class MainWindowViewModel : INotifyPropertyChanged
     {
-        public class Track
-        {
-            public string Filepath { get; set; }
-            public string FriendlyName { get; set; }
-
-            public Track(string path, string name)
-            {
-                Filepath = path;
-                FriendlyName = name;
-            }
-        }
-
         private string _title;
         private double _currentTrackLength;
         private double _currentTrackPosition;
@@ -200,7 +188,7 @@ namespace TinyPlayer.ViewModels
             var result = IOUtility.OpenFileDialog(Assembly.GetEntryAssembly().Location, null, "Select a File", FileDialogFilter.AudioFiles);
             if (!string.IsNullOrWhiteSpace(result))
             {
-                var track = new Track(result, result);
+                var track = new Track(result);
                 Playlist.Add(track);
             }
         }
