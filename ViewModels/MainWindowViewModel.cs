@@ -7,6 +7,7 @@ using TinyPlayer.Audio;
 using TinyPlayer.Enums;
 using TinyPlayer.Extensions;
 using TinyPlayer.IO;
+using NAudio.Wave;
 
 namespace TinyPlayer.ViewModels
 {
@@ -17,6 +18,7 @@ namespace TinyPlayer.ViewModels
         private double _currentTrackPosition;
         private string _playPauseImageSource;
         private float _currentVolume;
+        private bool _isSeeking;
 
         private ObservableCollection<Track> _playlist;
         private Track _currentlyPlayingTrack;
@@ -118,7 +120,7 @@ namespace TinyPlayer.ViewModels
         public ICommand LoadPlaylistCommand { get; set; }
 
         public ICommand RewindToStartCommand { get; set; }
-        public ICommand StartPlaybackCommand { get; set; }
+        public ICommand TogglePlaybackCommand { get; set; }
         public ICommand StopPlaybackCommand { get; set; }
         public ICommand ForwardToEndCommand { get; set; }
         public ICommand ShuffleCommand { get; set; }
@@ -134,11 +136,6 @@ namespace TinyPlayer.ViewModels
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        private enum PlaybackState
-        {
-            Playing, Stopped, Paused
-        }
-
         private PlaybackState _playbackState;
 
         public MainWindowViewModel()
@@ -151,6 +148,8 @@ namespace TinyPlayer.ViewModels
 
             _playbackState = PlaybackState.Stopped;
             CurrentVolume = 1;
+            CurrentTrackLength = 1;
+            PlayPauseImageSource = Resource_Play;
         }
 
         private void InitCommands()
@@ -162,7 +161,7 @@ namespace TinyPlayer.ViewModels
             LoadPlaylistCommand = new RelayCommand(LoadPlaylist, CanLoadPlaylist);
 
             RewindToStartCommand = new RelayCommand(RewindToStart, CanRewindToStart);
-            StartPlaybackCommand = new RelayCommand(StartPlayback, CanStartPlayback);
+            TogglePlaybackCommand = new RelayCommand(TogglePlayback, CanTogglePlayback);
             StopPlaybackCommand = new RelayCommand(StopPlayback, CanStopPlayback);
             ForwardToEndCommand = new RelayCommand(ForwardToEnd, CanForwardToEnd);
             ShuffleCommand = new RelayCommand(Shuffle, CanShuffle);
@@ -188,8 +187,7 @@ namespace TinyPlayer.ViewModels
             var result = IOUtility.OpenFileDialog(Assembly.GetEntryAssembly().Location, null, "Select a File", FileDialogFilter.AudioFiles);
             if (!string.IsNullOrWhiteSpace(result))
             {
-                var track = new Track(result);
-                Playlist.Add(track);
+                Playlist.Add(new Track(result));
             }
         }
 
@@ -200,7 +198,15 @@ namespace TinyPlayer.ViewModels
 
         private void AddFolderToPlaylist(object p)
         {
-
+            var result = IOUtility.OpenFolderDialog(Assembly.GetEntryAssembly().Location, null, "Select a Folder");
+            if (!string.IsNullOrWhiteSpace(result))
+            {
+                var files = IOUtility.GetAllFiles(result, new [] { ".wav", ".mp3", ".m4a", ".wma", ".ogg", ".flac" });
+                foreach(var file in files)
+                {
+                    Playlist.Add(new Track(file));
+                }
+            }
         }
 
         private bool CanAddFolderToPlaylist(object p)
@@ -238,56 +244,59 @@ namespace TinyPlayer.ViewModels
             return _playbackState == PlaybackState.Playing;
         }
 
-        private void StartPlayback(object p)
+        private void TogglePlayback(object p)
         {
-            if (CurrentlySelectedTrack != null)
+            if (CurrentlySelectedTrack == null) return;
+
+            if (_audioPlayer == null || _playbackState == PlaybackState.Stopped)
             {
-                if (_playbackState == PlaybackState.Stopped)
-                {
-                    _audioPlayer = new AudioPlayer(CurrentlySelectedTrack.Filepath, CurrentVolume);
-                    _audioPlayer.PlaybackStopType = PlaybackStopType.EndOfFile;
-                    _audioPlayer.PlaybackPaused += _audioPlayer_PlaybackPaused;
-                    _audioPlayer.PlaybackResumed += _audioPlayer_PlaybackResumed;
-                    _audioPlayer.PlaybackStopped += _audioPlayer_PlaybackStopped;
-                    _audioPlayer.PositionUpdated += _audioPlayer_PositionUpdated;
-                    CurrentTrackLength = _audioPlayer.LengthInSeconds;
-                    CurrentlyPlayingTrack = CurrentlySelectedTrack;
-                }
-                if (CurrentlySelectedTrack == CurrentlyPlayingTrack)
-                {
-                    _audioPlayer.TogglePlayPause(CurrentVolume);
-                }
+                _audioPlayer?.Dispose();
+                _audioPlayer = null;
+
+                _audioPlayer = new AudioPlayer(CurrentlySelectedTrack.Filepath, CurrentVolume);
+                _audioPlayer.PlaybackPaused += PlaybackPaused;
+                _audioPlayer.PlaybackResumed += PlaybackResumed;
+                _audioPlayer.PlaybackStopped += PlaybackStopped;
+                _audioPlayer.PositionUpdated += PositionUpdated;
+            }
+
+            if (_playbackState == PlaybackState.Stopped)
+            {
+                CurrentTrackPosition = 0;
+                CurrentTrackLength = _audioPlayer.LengthInSeconds;
+                CurrentlyPlayingTrack = CurrentlySelectedTrack;
+
+                _audioPlayer.Play();
+            }
+            else if (_playbackState == PlaybackState.Playing)
+            {
+                _audioPlayer.Pause();
+            }
+            else
+            {
+                _audioPlayer.Play();
             }
         }
 
-        private bool CanStartPlayback(object p)
+        private bool CanTogglePlayback(object p)
         {
             return CurrentlySelectedTrack != null;
         }
 
         private void StopPlayback(object p)
         {
-            if (_audioPlayer != null)
-            {
-                _audioPlayer.PlaybackStopType = PlaybackStopType.User;
-                _audioPlayer.Stop();
-            }
+            _audioPlayer?.Stop();
         }
 
         private bool CanStopPlayback(object p)
         {
-            if (_playbackState == PlaybackState.Playing || _playbackState == PlaybackState.Paused)
-            {
-                return true;
-            }
-            return false;
+            return _playbackState == PlaybackState.Playing || _playbackState == PlaybackState.Paused;
         }
 
         private void ForwardToEnd(object p)
         {
             if (_audioPlayer != null)
             {
-                _audioPlayer.PlaybackStopType = PlaybackStopType.EndOfFile;
                 _audioPlayer.PositionInSeconds = _audioPlayer.LengthInSeconds;
             }
         }
@@ -303,7 +312,7 @@ namespace TinyPlayer.ViewModels
 
         private void Shuffle(object p)
         {
-            Playlist = Playlist.Shuffle();
+            Playlist.Shuffle();
         }
 
         private bool CanShuffle(object p)
@@ -313,37 +322,23 @@ namespace TinyPlayer.ViewModels
 
         private void TrackControlMouseDown(object p)
         {
-            if (_audioPlayer != null)
-            {
-                _audioPlayer.Pause();
-            }
+            _isSeeking = true;
         }
 
         private void TrackControlMouseUp(object p)
         {
-            if (_audioPlayer != null)
-            {
-                _audioPlayer.PositionInSeconds = CurrentTrackPosition;
-                _audioPlayer.Play(NAudio.Wave.PlaybackState.Paused, CurrentVolume);
-            }
+            _isSeeking = false;
+            _audioPlayer.PositionInSeconds = CurrentTrackPosition;
         }
 
         private bool CanTrackControlMouseDown(object p)
         {
-            if (_playbackState == PlaybackState.Playing)
-            {
-                return true;
-            }
-            return false;
+            return _playbackState == PlaybackState.Playing && _audioPlayer != null;
         }
 
         private bool CanTrackControlMouseUp(object p)
         {
-            if (_playbackState == PlaybackState.Paused)
-            {
-                return true;
-            }
-            return false;
+            return _audioPlayer != null;
         }
 
         private void VolumeControlValueChanged(object p)
@@ -359,31 +354,41 @@ namespace TinyPlayer.ViewModels
             return true;
         }
 
-        private void _audioPlayer_PlaybackStopped()
+        private void PlaybackStopped()
         {
             _playbackState = PlaybackState.Stopped;
+            PlayPauseImageSource = Resource_Play;
+
             CommandManager.InvalidateRequerySuggested();
             CurrentTrackPosition = 0;
 
-            if (_audioPlayer.PlaybackStopType == PlaybackStopType.EndOfFile)
+            if (_audioPlayer.EndOfFile)
             {
-                CurrentlySelectedTrack = Playlist.NextItem(CurrentlyPlayingTrack);
-                StartPlayback(null);
+                var nextTrack = Playlist.NextItem(CurrentlyPlayingTrack);
+                if (nextTrack == null) return;
+
+                CurrentlySelectedTrack = nextTrack;
+                TogglePlayback(null);
             }
+
         }
 
-        private void _audioPlayer_PlaybackResumed()
+        private void PlaybackResumed()
         {
             _playbackState = PlaybackState.Playing;
+            PlayPauseImageSource = Resource_Pause;
         }
 
-        private void _audioPlayer_PlaybackPaused()
+        private void PlaybackPaused()
         {
             _playbackState = PlaybackState.Paused;
+            PlayPauseImageSource = Resource_Play;
         }
 
-        private void _audioPlayer_PositionUpdated()
+        private void PositionUpdated()
         {
+            if (_isSeeking) return;
+
             CurrentTrackPosition = _audioPlayer?.PositionInSeconds ?? 0.0;
         }
     }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -12,7 +13,7 @@ namespace TinyPlayer.IO
         private static readonly Dictionary<FileDialogFilter, (string name, string extensions)> _fileDialogFilterValues = new Dictionary<FileDialogFilter, (string name, string extensions)>()
         {
             { FileDialogFilter.AllFiles, ("All Files", "*.*") },
-            { FileDialogFilter.AudioFiles, ("Audio files", "*.wav; *.mp3; *.wma; *.ogg; *.flac") }
+            { FileDialogFilter.AudioFiles, ("Audio files", "*.wav; *.mp3; *.m4a; *.wma; *.ogg; *.flac") }
         };
 
         private static string OpenDialog(string initialDirectory, DependencyObject currentElement, string title, bool isFolderPicker, params FileDialogFilter[] filters)
@@ -89,6 +90,53 @@ namespace TinyPlayer.IO
             {
                 return null;
             }
+        }
+
+        public static string GetFileExtension(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return "";
+            }
+
+            var pathIsFile = PathIsFile(path);
+            if (pathIsFile == true)
+            {
+                return Path.GetExtension(path).ToLower();
+            }
+            if (pathIsFile == false)
+            {
+                return "";
+            }
+            else
+            {
+                return path.Substring(path.LastIndexOf('.'));
+            }
+        }
+
+        public static string[] GetAllFiles(string path, string[] ofType = null)
+        {
+            //assumes user has access to desired folder/files. This will break if they don't
+            var files = Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories);
+
+            var final = new List<string>();
+            if (ofType != null)
+            {
+                foreach (string file in files)
+                {
+                    string ext = GetFileExtension(file);
+                    if (ofType.Contains(ext))
+                    {
+                        final.Add(file);
+                    }
+                }
+            }
+            else
+            {
+                final.AddRange(files);
+            }
+
+            return final.ToArray();
         }
     }
 }

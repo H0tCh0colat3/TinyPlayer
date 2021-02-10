@@ -13,7 +13,7 @@ namespace TinyPlayer.Audio
 
         private Timer _positionUpdateTimer;
 
-        public PlaybackStopType PlaybackStopType { get; set; }
+        public bool EndOfFile { get; private set; } = false;
 
         public double LengthInSeconds => _audioFileReader?.TotalTime.TotalSeconds ?? 0.0;
 
@@ -24,7 +24,7 @@ namespace TinyPlayer.Audio
             {
                 if (_audioFileReader != null)
                 {
-                    _audioFileReader.CurrentTime = TimeSpan.FromSeconds(value);
+                    _audioFileReader.CurrentTime = TimeSpan.FromSeconds(Math.Min(value, LengthInSeconds));
                 }
             }
         }
@@ -48,8 +48,6 @@ namespace TinyPlayer.Audio
 
         public AudioPlayer(string filepath, float volume)
         {
-            PlaybackStopType = PlaybackStopType.EndOfFile;
-
             _audioFileReader = new AudioFileReader(filepath) { Volume = volume };
 
             _output = new DirectSoundOut(200);
@@ -57,7 +55,7 @@ namespace TinyPlayer.Audio
 
             var wc = new WaveChannel32(_audioFileReader)
             {
-                PadWithZeroes = true
+                PadWithZeroes = false
             };
 
             _output.Init(wc);
@@ -65,6 +63,7 @@ namespace TinyPlayer.Audio
 
         private void OutputPlaybackStopped(object sender, StoppedEventArgs e)
         {
+            EndOfFile = PositionInSeconds >= LengthInSeconds;
             PlaybackStopped?.Invoke();
             Dispose();
         }
@@ -74,23 +73,15 @@ namespace TinyPlayer.Audio
             PositionUpdated?.Invoke();
         }
 
-        public void Play(PlaybackState playbackState, double currentVolumeLevel)
+        public void Play()
         {
-            if (playbackState == PlaybackState.Stopped || playbackState == PlaybackState.Paused)
+            if (_output != null)
             {
                 _output.Play();
+                PlaybackResumed?.Invoke();
             }
 
-            _audioFileReader.Volume = (float)currentVolumeLevel;
-            PlaybackResumed?.Invoke();
-
             _positionUpdateTimer = new Timer(TimerCallback, null, 0, 1000);
-        }
-
-        public void Stop()
-        {
-            DisposeTimer();
-            _output?.Stop();
         }
 
         public void Pause()
@@ -103,25 +94,10 @@ namespace TinyPlayer.Audio
             }
         }
 
-        public void TogglePlayPause(double currentVolumeLevel)
+        public void Stop()
         {
             DisposeTimer();
-
-            if (_output != null)
-            {
-                if (_output.PlaybackState == PlaybackState.Playing)
-                {
-                    Pause();
-                }
-                else
-                {
-                    Play(_output.PlaybackState, currentVolumeLevel);
-                }
-            }
-            else
-            {
-                Play(PlaybackState.Stopped, currentVolumeLevel);
-            }
+            _output?.Stop();
         }
 
         public void Dispose()
