@@ -8,6 +8,7 @@ using TinyPlayer.Enums;
 using TinyPlayer.Extensions;
 using TinyPlayer.IO;
 using NAudio.Wave;
+using TinyPlayer.Commands;
 
 namespace TinyPlayer.ViewModels
 {
@@ -129,6 +130,8 @@ namespace TinyPlayer.ViewModels
         public ICommand TrackControlMouseUpCommand { get; set; }
         public ICommand VolumeControlValueChangedCommand { get; set; }
 
+        public ICommand PlaylistDragDropCommand { get; set; }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName = null)
@@ -154,9 +157,9 @@ namespace TinyPlayer.ViewModels
 
         private void InitCommands()
         {
-            ExitApplicationCommand = new RelayCommand(ExitApplication, CanExitApplication);
-            AddFileToPlaylistCommand = new RelayCommand(AddFileToPlaylist, CanAddFileToPlaylist);
-            AddFolderToPlaylistCommand = new RelayCommand(AddFolderToPlaylist, CanAddFolderToPlaylist);
+            ExitApplicationCommand = new RelayCommand(ExitApplication);
+            AddFileToPlaylistCommand = new RelayCommand(AddFileToPlaylist);
+            AddFolderToPlaylistCommand = new RelayCommand(AddFolderToPlaylist);
             SavePlaylistCommand = new RelayCommand(SavePlaylist, CanSavePlaylist);
             LoadPlaylistCommand = new RelayCommand(LoadPlaylist, CanLoadPlaylist);
 
@@ -164,22 +167,19 @@ namespace TinyPlayer.ViewModels
             TogglePlaybackCommand = new RelayCommand(TogglePlayback, CanTogglePlayback);
             StopPlaybackCommand = new RelayCommand(StopPlayback, CanStopPlayback);
             ForwardToEndCommand = new RelayCommand(ForwardToEnd, CanForwardToEnd);
-            ShuffleCommand = new RelayCommand(Shuffle, CanShuffle);
+            ShuffleCommand = new RelayCommand(Shuffle);
 
             TrackControlMouseDownCommand = new RelayCommand(TrackControlMouseDown, CanTrackControlMouseDown);
             TrackControlMouseUpCommand = new RelayCommand(TrackControlMouseUp, CanTrackControlMouseUp);
-            VolumeControlValueChangedCommand = new RelayCommand(VolumeControlValueChanged, CanVolumeControlValueChanged);
+            VolumeControlValueChangedCommand = new RelayCommand(VolumeControlValueChanged);
+
+            PlaylistDragDropCommand = new RelayCommand(PlaylistDragDrop);
         }
 
         private void ExitApplication(object p)
         {
             _audioPlayer?.Dispose();
             Application.Current.Shutdown();
-        }
-
-        private bool CanExitApplication(object p)
-        {
-            return true;
         }
 
         private void AddFileToPlaylist(object p)
@@ -189,11 +189,6 @@ namespace TinyPlayer.ViewModels
             {
                 Playlist.Add(new Track(result));
             }
-        }
-
-        private bool CanAddFileToPlaylist(object p)
-        {
-            return _playbackState == PlaybackState.Stopped;
         }
 
         private void AddFolderToPlaylist(object p)
@@ -207,11 +202,6 @@ namespace TinyPlayer.ViewModels
                     Playlist.Add(new Track(file));
                 }
             }
-        }
-
-        private bool CanAddFolderToPlaylist(object p)
-        {
-            return true;
         }
 
         private void SavePlaylist(object p)
@@ -315,11 +305,6 @@ namespace TinyPlayer.ViewModels
             Playlist.Shuffle();
         }
 
-        private bool CanShuffle(object p)
-        {
-            return true;
-        }
-
         private void TrackControlMouseDown(object p)
         {
             _isSeeking = true;
@@ -349,9 +334,13 @@ namespace TinyPlayer.ViewModels
             }
         }
 
-        private bool CanVolumeControlValueChanged(object p)
+        private void PlaylistDragDrop(object droppedObject)
         {
-            return true;
+            if (droppedObject is DragEventArgs args)
+            {
+                var droppedItems = args.Data.GetData(DataFormats.FileDrop) as string[];
+                if (droppedItems == null) return;
+            }
         }
 
         private void PlaybackStopped()

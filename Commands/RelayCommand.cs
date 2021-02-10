@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Windows.Input;
 
-namespace TinyPlayer.ViewModels
+namespace TinyPlayer.Commands
 {
     public class RelayCommand : ICommand
     {
         private readonly Action<object> _execute;
         private readonly Predicate<object> _canExecute;
 
-        public RelayCommand(Action<object> execute, Predicate<object> canExecute)
+        public RelayCommand(Action<object> execute, Predicate<object> canExecute = null)
         {
             _execute = execute;
             _canExecute = canExecute;
@@ -16,7 +16,7 @@ namespace TinyPlayer.ViewModels
 
         public bool CanExecute(object parameter)
         {
-            bool result = _canExecute == null ? true : _canExecute(parameter);
+            bool result = _canExecute?.Invoke(parameter) ?? true;
             return result;
         }
 
