@@ -1,62 +1,61 @@
-﻿<Window x:Class="NaudioPlayer.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:command="clr-namespace:TinyPlayer.Commands"
-        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
-        xmlns:viewModels="clr-namespace:TinyPlayer.ViewModels"
-        mc:Ignorable="d"
-        Title="{Binding Title}" Height="350" Width="525">
+﻿<Window
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:command="clr-namespace:TinyPlayer.Commands"
+    xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+    xmlns:viewModels="clr-namespace:TinyPlayer.ViewModels"
+    mc:Ignorable="d"
+    Title="{Binding Title}" Height="350" Width="525">
+
     <i:Interaction.Triggers>
         <i:EventTrigger EventName="Closing">
             <i:InvokeCommandAction Command="{Binding ExitApplicationCommand}"/>
         </i:EventTrigger>
     </i:Interaction.Triggers>
+
     <Window.DataContext>
         <viewModels:MainWindowViewModel/>
     </Window.DataContext>
-    <DockPanel LastChildFill="True">
+
+    <DockPanel LastChildFill="True" Background="White">
         <Menu DockPanel.Dock="Top">
-            <MenuItem Header="Add">
-                <MenuItem Header="File" Command="{Binding AddFileToPlaylistCommand}"/>
-                <MenuItem Header="Folder" Command="{Binding AddFolderToPlaylistCommand}"/>
+            <MenuItem Header="Playlist">
+                <MenuItem Header="Add File" Command="{Binding AddFileToPlaylistCommand}"/>
+                <MenuItem Header="Add Folder" Command="{Binding AddFolderToPlaylistCommand}"/>
             </MenuItem>
             <MenuItem Header="Save" Command="{Binding SavePlaylistCommand}"/>
             <MenuItem Header="Load" Command="{Binding LoadPlaylistCommand}"/>
         </Menu>
-        <Grid DockPanel.Dock="Bottom" Height="30">
+        <Grid DockPanel.Dock="Bottom" Height="25">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="30"/>
-                <ColumnDefinition Width="30"/>
-                <ColumnDefinition Width="30"/>
-                <ColumnDefinition Width="30"/>
+                <ColumnDefinition Width="25"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="30"/>
+                <ColumnDefinition Width="25"/>
+                <ColumnDefinition Width="25"/>
+                <ColumnDefinition Width="25"/>
+                <ColumnDefinition Width="25"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="25"/>
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" Margin="3" Command="{Binding RewindToStartCommand}">
+            <Button Grid.Column="2" Margin="3" Command="{Binding RewindToStartCommand}">
                 <Image Source="{Binding Resource_Previous}" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" HorizontalAlignment="Center"/>
             </Button>
-            <Button Grid.Column="1" Margin="3" Command="{Binding TogglePlaybackCommand}">
+            <Button Grid.Column="3" Margin="3" Command="{Binding TogglePlaybackCommand}">
                 <Image Source="{Binding PlayPauseImageSource}" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" HorizontalAlignment="Center"/>
             </Button>
-            <Button Grid.Column="2" Margin="3" Command="{Binding StopPlaybackCommand}">
+            <Button Grid.Column="4" Margin="3" Command="{Binding StopPlaybackCommand}">
                 <Image Source="{Binding Resource_Stop}" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" HorizontalAlignment="Center"/>
             </Button>
-            <Button Grid.Column="3" Margin="3" Command="{Binding ForwardToEndCommand}">
+            <Button Grid.Column="5" Margin="3" Command="{Binding ForwardToEndCommand}">
                 <Image Source="{Binding Resource_Next}" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" HorizontalAlignment="Center"/>
             </Button>
-            <Button Grid.Column="5" Margin="3" Command="{Binding ShuffleCommand}">
+            <Button Grid.Column="7" Margin="3" Command="{Binding ShuffleCommand}">
                 <Image Source="{Binding Resource_Shuffle}" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" HorizontalAlignment="Center"/>
             </Button>
         </Grid>
         <Grid DockPanel.Dock="Bottom" Margin="3">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*"/>
-                <ColumnDefinition Width="20"/>
-                <ColumnDefinition Width="20"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
             <Slider Grid.Column="0" Minimum="0" Maximum="{Binding CurrentTrackLength, Mode=OneWay}" Value="{Binding CurrentTrackPosition, Mode=TwoWay}" x:Name="SeekbarControl" VerticalAlignment="Center">
                 <i:Interaction.Triggers>
                     <i:EventTrigger EventName="PreviewMouseDown">
@@ -67,19 +66,25 @@
                     </i:EventTrigger>
                 </i:Interaction.Triggers>
             </Slider>
-            <Image Source="{Binding Resource_Volume}" Grid.Column="2"></Image>
-            <Slider Grid.Column="3" Minimum="0" Maximum="1" Value="{Binding CurrentVolume, Mode=TwoWay}" x:Name="VolumeControl" VerticalAlignment="Center">
+        </Grid>
+        <Grid DockPanel.Dock="Bottom">
+            <TextBlock Grid.Column="1" Text="{Binding CurrentlyPlayingTrack.FriendlyName, Mode=OneWay}"/>
+        </Grid>
+        <Grid DockPanel.Dock="Right" Margin="5,0,5,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="15"/>
+            </Grid.RowDefinitions>
+            <Slider Minimum="0" Maximum="1" Value="{Binding CurrentVolume, Mode=TwoWay}" x:Name="VolumeControl" Orientation="Vertical">
                 <i:Interaction.Triggers>
                     <i:EventTrigger EventName="ValueChanged">
                         <i:InvokeCommandAction Command="{Binding VolumeControlValueChangedCommand}"/>
                     </i:EventTrigger>
                 </i:Interaction.Triggers>
             </Slider>
+            <Image Source="{Binding Resource_Volume}" Grid.Row="1"/>
         </Grid>
-        <Grid DockPanel.Dock="Bottom">
-            <TextBlock Grid.Column="1" Text="{Binding CurrentlyPlayingTrack.FriendlyName, Mode=OneWay}"/>
-        </Grid>
-        <ListView x:Name="Playlist" ItemsSource="{Binding Playlist}" SelectedItem="{Binding CurrentlySelectedTrack, Mode=TwoWay}" AllowDrop="True">
+        <ListView x:Name="Playlist" ItemsSource="{Binding Playlist}" SelectedItem="{Binding CurrentlySelectedTrack, Mode=TwoWay}" AllowDrop="True" BorderBrush="#00ABADB3">
             <i:Interaction.Triggers>
                 <i:EventTrigger EventName="Drop">
                     <command:InvokeDelegateCommandAction Command="{Binding PlaylistDragDropCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=InvokeParameter}"/>

@@ -169,8 +169,8 @@ namespace TinyPlayer.ViewModels
             ForwardToEndCommand = new RelayCommand(ForwardToEnd, CanForwardToEnd);
             ShuffleCommand = new RelayCommand(Shuffle);
 
-            TrackControlMouseDownCommand = new RelayCommand(TrackControlMouseDown, CanTrackControlMouseDown);
-            TrackControlMouseUpCommand = new RelayCommand(TrackControlMouseUp, CanTrackControlMouseUp);
+            TrackControlMouseDownCommand = new RelayCommand(BeginSeek, CanBeginSeek);
+            TrackControlMouseUpCommand = new RelayCommand(EndSeek, CanEndSeek);
             VolumeControlValueChangedCommand = new RelayCommand(VolumeControlValueChanged);
 
             PlaylistDragDropCommand = new RelayCommand(PlaylistDragDrop);
@@ -185,23 +185,13 @@ namespace TinyPlayer.ViewModels
         private void AddFileToPlaylist(object p)
         {
             var result = IOUtility.OpenFileDialog(Assembly.GetEntryAssembly().Location, null, "Select a File", FileDialogFilter.AudioFiles);
-            if (!string.IsNullOrWhiteSpace(result))
-            {
-                Playlist.Add(new Track(result));
-            }
+            AddTrackFromFile(result);
         }
 
         private void AddFolderToPlaylist(object p)
         {
             var result = IOUtility.OpenFolderDialog(Assembly.GetEntryAssembly().Location, null, "Select a Folder");
-            if (!string.IsNullOrWhiteSpace(result))
-            {
-                var files = IOUtility.GetAllFiles(result, new [] { ".wav", ".mp3", ".m4a", ".wma", ".ogg", ".flac" });
-                foreach(var file in files)
-                {
-                    Playlist.Add(new Track(file));
-                }
-            }
+            AddTracksFromFolder(result);
         }
 
         private void SavePlaylist(object p)
@@ -305,23 +295,23 @@ namespace TinyPlayer.ViewModels
             Playlist.Shuffle();
         }
 
-        private void TrackControlMouseDown(object p)
+        private void BeginSeek(object p)
         {
             _isSeeking = true;
         }
 
-        private void TrackControlMouseUp(object p)
+        private void EndSeek(object p)
         {
             _isSeeking = false;
             _audioPlayer.PositionInSeconds = CurrentTrackPosition;
         }
 
-        private bool CanTrackControlMouseDown(object p)
+        private bool CanBeginSeek(object p)
         {
             return _playbackState == PlaybackState.Playing && _audioPlayer != null;
         }
 
-        private bool CanTrackControlMouseUp(object p)
+        private bool CanEndSeek(object p)
         {
             return _audioPlayer != null;
         }
@@ -338,8 +328,37 @@ namespace TinyPlayer.ViewModels
         {
             if (droppedObject is DragEventArgs args)
             {
-                var droppedItems = args.Data.GetData(DataFormats.FileDrop) as string[];
-                if (droppedItems == null) return;
+                var paths = args.Data.GetData(DataFormats.FileDrop) as string[];
+                if (paths == null) return;
+
+                foreach(var path in paths)
+                {
+                    if (IOUtility.PathIsFile(path) == true)
+                    {
+                        AddTrackFromFile(path);
+                    }
+                    if (IOUtility.PathIsFile(path) == false)
+                    {
+                        AddTracksFromFolder(path);
+                    }
+                }
+            }
+        }
+
+        private void AddTrackFromFile(string file)
+        {
+            if (string.IsNullOrWhiteSpace(file)) return;
+            Playlist.Add(new Track(file));
+        }
+
+        private void AddTracksFromFolder(string folderPath)
+        {
+            if (string.IsNullOrWhiteSpace(folderPath)) return;
+
+            var files = IOUtility.GetFilesRecursive(folderPath, new[] { ".wav", ".mp3", ".m4a", ".wma", ".ogg", ".flac" });
+            foreach (var file in files)
+            {
+                Playlist.Add(new Track(file));
             }
         }
 

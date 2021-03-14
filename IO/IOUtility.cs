@@ -114,7 +114,7 @@ namespace TinyPlayer.IO
             }
         }
 
-        public static string[] GetAllFiles(string path, string[] ofType = null)
+        public static string[] GetFilesRecursive(string path, string[] ofType = null)
         {
             //assumes user has access to desired folder/files. This will break if they don't
             var files = Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories);
