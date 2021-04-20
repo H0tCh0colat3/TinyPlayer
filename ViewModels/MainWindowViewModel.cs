@@ -120,17 +120,19 @@ namespace TinyPlayer.ViewModels
         public ICommand SavePlaylistCommand { get; set; }
         public ICommand LoadPlaylistCommand { get; set; }
 
-        public ICommand RewindToStartCommand { get; set; }
+        public ICommand BackCommand { get; set; }
         public ICommand TogglePlaybackCommand { get; set; }
-        public ICommand StopPlaybackCommand { get; set; }
-        public ICommand ForwardToEndCommand { get; set; }
+        public ICommand StopCommand { get; set; }
+        public ICommand FowardCommand { get; set; }
         public ICommand ShuffleCommand { get; set; }
 
-        public ICommand TrackControlMouseDownCommand { get; set; }
-        public ICommand TrackControlMouseUpCommand { get; set; }
-        public ICommand VolumeControlValueChangedCommand { get; set; }
+        public ICommand SeekControlMouseDownCommand { get; set; }
+        public ICommand SeekControlMouseUpCommand { get; set; }
+        public ICommand VolumeControlChangedCommand { get; set; }
 
         public ICommand PlaylistDragDropCommand { get; set; }
+        public ICommand ExcludeFromMasterListCommand { get; set; }
+        public ICommand RemoveFromPlaylistCommand { get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -163,17 +165,19 @@ namespace TinyPlayer.ViewModels
             SavePlaylistCommand = new RelayCommand(SavePlaylist, CanSavePlaylist);
             LoadPlaylistCommand = new RelayCommand(LoadPlaylist, CanLoadPlaylist);
 
-            RewindToStartCommand = new RelayCommand(RewindToStart, CanRewindToStart);
+            BackCommand = new RelayCommand(RewindToStart, CanRewindToStart);
             TogglePlaybackCommand = new RelayCommand(TogglePlayback, CanTogglePlayback);
-            StopPlaybackCommand = new RelayCommand(StopPlayback, CanStopPlayback);
-            ForwardToEndCommand = new RelayCommand(ForwardToEnd, CanForwardToEnd);
+            StopCommand = new RelayCommand(StopPlayback, CanStopPlayback);
+            FowardCommand = new RelayCommand(ForwardToEnd, CanForwardToEnd);
             ShuffleCommand = new RelayCommand(Shuffle);
 
-            TrackControlMouseDownCommand = new RelayCommand(BeginSeek, CanBeginSeek);
-            TrackControlMouseUpCommand = new RelayCommand(EndSeek, CanEndSeek);
-            VolumeControlValueChangedCommand = new RelayCommand(VolumeControlValueChanged);
+            SeekControlMouseDownCommand = new RelayCommand(BeginSeek, CanBeginSeek);
+            SeekControlMouseUpCommand = new RelayCommand(EndSeek, CanEndSeek);
+            VolumeControlChangedCommand = new RelayCommand(VolumeControlValueChanged);
 
             PlaylistDragDropCommand = new RelayCommand(PlaylistDragDrop);
+            ExcludeFromMasterListCommand = new RelayCommand(ExcludeFromMasterList);
+            RemoveFromPlaylistCommand = new RelayCommand(RemoveFromPlaylist);
         }
 
         private void ExitApplication(object p)
@@ -360,6 +364,20 @@ namespace TinyPlayer.ViewModels
             {
                 Playlist.Add(new Track(file));
             }
+        }
+
+        private void RemoveFromPlaylist(object t)
+        {
+            if (!(t is Track track)) return;
+
+
+        }
+
+        private void ExcludeFromMasterList(object t)
+        {
+            if (!(t is Track track)) return;
+
+
         }
 
         private void PlaybackStopped()

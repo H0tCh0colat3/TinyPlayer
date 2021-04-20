@@ -19,6 +19,10 @@
         <viewModels:MainWindowViewModel/>
     </Window.DataContext>
 
+    <Window.Resources>
+        <command:BindingProxy x:Key="CommandProxy" Data="{Binding }"/>
+    </Window.Resources>
+
     <DockPanel LastChildFill="True" Background="White">
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="Playlist">
@@ -39,16 +43,16 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="25"/>
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="2" Margin="3" Command="{Binding RewindToStartCommand}">
+            <Button Grid.Column="2" Margin="3" Command="{Binding BackCommand}">
                 <Image Source="{Binding Resource_Previous}" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" HorizontalAlignment="Center"/>
             </Button>
             <Button Grid.Column="3" Margin="3" Command="{Binding TogglePlaybackCommand}">
                 <Image Source="{Binding PlayPauseImageSource}" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" HorizontalAlignment="Center"/>
             </Button>
-            <Button Grid.Column="4" Margin="3" Command="{Binding StopPlaybackCommand}">
+            <Button Grid.Column="4" Margin="3" Command="{Binding StopCommand}">
                 <Image Source="{Binding Resource_Stop}" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" HorizontalAlignment="Center"/>
             </Button>
-            <Button Grid.Column="5" Margin="3" Command="{Binding ForwardToEndCommand}">
+            <Button Grid.Column="5" Margin="3" Command="{Binding ForwardCommand}">
                 <Image Source="{Binding Resource_Next}" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" HorizontalAlignment="Center"/>
             </Button>
             <Button Grid.Column="7" Margin="3" Command="{Binding ShuffleCommand}">
@@ -59,10 +63,10 @@
             <Slider Grid.Column="0" Minimum="0" Maximum="{Binding CurrentTrackLength, Mode=OneWay}" Value="{Binding CurrentTrackPosition, Mode=TwoWay}" x:Name="SeekbarControl" VerticalAlignment="Center">
                 <i:Interaction.Triggers>
                     <i:EventTrigger EventName="PreviewMouseDown">
-                        <i:InvokeCommandAction Command="{Binding TrackControlMouseDownCommand}"/>
+                        <i:InvokeCommandAction Command="{Binding SeekControlMouseDownCommand}"/>
                     </i:EventTrigger>
                     <i:EventTrigger EventName="PreviewMouseUp">
-                        <i:InvokeCommandAction Command="{Binding TrackControlMouseUpCommand}"/>
+                        <i:InvokeCommandAction Command="{Binding SeekControlMouseUpCommand}"/>
                     </i:EventTrigger>
                 </i:Interaction.Triggers>
             </Slider>
@@ -78,7 +82,7 @@
             <Slider Minimum="0" Maximum="1" Value="{Binding CurrentVolume, Mode=TwoWay}" x:Name="VolumeControl" Orientation="Vertical">
                 <i:Interaction.Triggers>
                     <i:EventTrigger EventName="ValueChanged">
-                        <i:InvokeCommandAction Command="{Binding VolumeControlValueChangedCommand}"/>
+                        <i:InvokeCommandAction Command="{Binding VolumeControlChangedCommand}"/>
                     </i:EventTrigger>
                 </i:Interaction.Triggers>
             </Slider>
@@ -92,10 +96,18 @@
             </i:Interaction.Triggers>
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <Grid>
+                    <Grid>                        
+                        <Grid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Remove From Playlist" Command="{Binding Source={StaticResource CommandProxy}, Path=Data.RemoveFromPlaylistCommand}" CommandParameter="{Binding }"/>
+                                <MenuItem Header="Exclude From Master List" Command="{Binding Source={StaticResource CommandProxy}, Path=Data.ExcludeFromMasterListCommand}" CommandParameter="{Binding }"/>
+                            </ContextMenu>
+                        </Grid.ContextMenu>
+
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition/>
                         </Grid.ColumnDefinitions>
+                        
                         <TextBlock Grid.Column="0" Text="{Binding Path=FriendlyName, Mode=OneWay}"/>
                     </Grid>
                 </DataTemplate>
